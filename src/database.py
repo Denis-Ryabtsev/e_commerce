@@ -1,6 +1,6 @@
 from typing import AsyncGenerator
 
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import create_async_engine, \
                                     async_sessionmaker, \
                                     AsyncSession
