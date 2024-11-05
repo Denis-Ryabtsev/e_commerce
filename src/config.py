@@ -12,6 +12,8 @@ class Setting(BaseSettings):
     DB_PASS: str
     DB_USER: str
     SECRET_AUTH: str
+    SMTP_USER: str
+    SMTP_PASS: str
 
     @property
     def DB_URL(self):
