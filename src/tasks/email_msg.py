@@ -1,6 +1,6 @@
 import smtplib
 from datetime import datetime
-from typing import Union
+
 from email.message import EmailMessage
 from celery import Celery
 
@@ -45,7 +45,8 @@ def verify_account(user_email: str, link: str, user_name: str):
         'Content': (
             '<div>'
             f'<h1 style="color: red;">Здравствуйте, {user_name}, '
-            f'Please verify your account by clicking on the link: {link} 😊</h1>'
+            f'Please verify your account by '\
+            f'clicking on the link: {link} 😊</h1>'
             '</div>'
         )
     }
@@ -59,7 +60,53 @@ def after_verify(user_email: str, user_name: str):
         'Content': (
             '<div>'
             f'<h1 style="color: red;">Здравствуйте, {user_name}, '
-            f'Your account was verified in {datetime.now().strftime("%H:%M:%S")}😊</h1>'
+            f'Your account was verified in '\
+            f'{datetime.now().strftime("%H:%M:%S")}😊</h1>'
+            '</div>'
+        )
+    }
+    send_email.delay(email)
+
+def reset_pass(user_email: str, link: str, user_name: str) -> None:
+    email = {
+        'Subject': 'Reset pass',
+        'From': setting.SMTP_USER,
+        'To': user_email,
+        'Content': (
+            '<div>'
+            f'<h1 style="color: red;">Здравствуйте, {user_name}, '
+            f'If u need to reset your account password by '\
+            f'clicking on the link: {link} 😊</h1>'
+            '</div>'
+        )
+    }
+    send_email.delay(email)
+
+def after_reset(user_email: str, user_name: str) -> None:
+    email = {
+        'Subject': 'Pass was reset',
+        'From': setting.SMTP_USER,
+        'To': user_email,
+        'Content': (
+            '<div>'
+            f'<h1 style="color: red;">Здравствуйте, {user_name}, '
+            f'Your accounts password was recovery in '\
+            f'{datetime.now().strftime("%H:%M:%S")}😊</h1>'
+            '</div>'
+        )
+    }
+    send_email.delay(email)
+
+def after_delete(user_email: str, user_name: str) -> None:
+    email = {
+        'Subject': 'Account was deleted',
+        'From': setting.SMTP_USER,
+        'To': user_email,
+        'Content': (
+            '<div>'
+            f'<h1 style="color: red;">Здравствуйте, {user_name}, '
+            f'Your accounts was deleted in '\
+            f'{datetime.now().strftime("%H:%M:%S")}😊</h1>'
             '</div>'
         )
     }
