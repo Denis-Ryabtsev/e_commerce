@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
 from auth.base_config import fastapi_users, auth_backend
-from auth.router import router_reg, router_user
+from auth.router import router_reg, router_user, \
+                        router_admin, router_option
 
 
 app = FastAPI(
@@ -20,3 +21,7 @@ app.include_router(router_reg)
 
 # users operations
 app.include_router(router_user)
+app.include_router(router_option)
+
+# admins operations
+app.include_router(router_admin)
