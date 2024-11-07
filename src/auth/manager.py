@@ -8,7 +8,8 @@ from fastapi_users.jwt import generate_jwt, decode_jwt
 
 from auth.models import User
 from auth.utils import get_user_db
-from tasks.email_msg import after_reg, verify_account, after_verify
+from tasks.email_msg import after_reg, after_reset, \
+                            reset_pass, verify_account, after_verify
 from config import setting
 
 
@@ -54,6 +55,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         token: str, 
         request: Optional[Request] = None
     ) -> User:
+        
         try:
             data = decode_jwt(
                 token,
@@ -109,6 +111,91 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
         return verified_user
 
+    async def forgot_password(
+        self, 
+        user: User, 
+        request: Optional[Request] = None
+    ) -> None:
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=430,
+                detail=f"User is inactive"
+            )
+
+        token_data = {
+            "sub": str(user.id),
+            "password_fgpt": self.password_helper.hash(user.hashed_password),
+            "aud": self.reset_password_token_audience,
+        }
+        token = generate_jwt(
+            token_data,
+            self.reset_password_token_secret,
+            self.reset_password_token_lifetime_seconds,
+        )
+
+        link = f"http://localhost:8000/reset/{token}"
+
+        reset_pass(user.email, link, user.username)
+        await self.on_after_forgot_password(user, token, request)
+
+    async def reset_password(
+        self, 
+        token: str, 
+        password: str, 
+        request: Optional[Request] = None
+    ) -> User:
+        try:
+            data = decode_jwt(
+                token,
+                self.reset_password_token_secret,
+                [self.reset_password_token_audience],
+            )
+        except jwt.PyJWTError:
+            raise HTTPException(
+                status_code=412,
+                detail=f"Invalid reset password token"
+            )
+
+        try:
+            user_id = data["sub"]
+            password_fingerprint = data["password_fgpt"]
+        except KeyError:
+            raise HTTPException(
+                status_code=412,
+                detail=f"Invalid reset password token"
+            )
+
+        try:
+            parsed_id = self.parse_id(user_id)
+        except InvalidID:
+            raise HTTPException(
+                status_code=412,
+                detail=f"Invalid reset password token"
+            )
+        
+        if not user.is_active:
+                    raise HTTPException(
+                        status_code=430,
+                        detail=f"User is inactive"
+                    )
+        
+        user = await self.get(parsed_id)
+
+        valid_password_fingerprint, _ = self.password_helper.verify_and_update(
+            user.hashed_password, password_fingerprint
+        )
+        if not valid_password_fingerprint:
+            raise HTTPException(
+                status_code=412,
+                detail=f"Invalid reset password token"
+            )
+
+        updated_user = await self._update(user, {"password": password})
+        await self.on_after_reset_password(user, request)
+
+        return updated_user
+
     def on_after_register(
         self, 
         user: User, 
@@ -124,6 +211,13 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         request: Optional[Request] = None
     ) -> None:
         print(f"User {user.id} has forgot their password. Reset token: {token}")
+
+    async def on_after_reset_password(
+        self, 
+        user: User, 
+        request: Request | None = None
+    ) -> None:
+        after_reset(user.email, user.username)
 
     async def on_after_request_verify(
         self, 
