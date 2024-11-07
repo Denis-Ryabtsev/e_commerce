@@ -11,7 +11,7 @@ from config import setting
 
 a_engine = create_async_engine(
     url=setting.DB_URL,
-    echo=False,
+    echo=True,
     pool_size=5,
     max_overflow=10
 )
