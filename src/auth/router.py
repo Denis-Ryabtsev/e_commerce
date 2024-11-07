@@ -1,29 +1,42 @@
+from typing import Union
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_users.exceptions import UserAlreadyExists, UserNotExists
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete, select, update
 
-from auth.schemas import UserCreate, UserRead, UserReg, UserInfo, MyInfo
+
+from auth.schemas import UserCreate, UserReg, UserInfo, MyInfo
 from auth.base_config import fastapi_users
 from auth.manager import UserManager
-from tasks.email_msg import verify_account
+from auth.models import User
+from database import get_async_session
+from tasks.email_msg import after_delete
 
 
 router_reg = APIRouter(
-    #prefix="register",
     tags=["Registration"]
 )
 
 router_user = APIRouter(
-    tags=["Users"]
+    tags=["User interface"]
 )
 
-# удаление юзеров и становление админом
-# router_admin
+router_option = APIRouter(
+    prefix="/options",
+    tags=["User interface"]
+)
 
-@router_reg.post("/register")
+router_admin = APIRouter(
+    prefix="/control",
+    tags=["Admin interface"]
+)
+
+
+@router_reg.post("/register", response_model=None)
 async def custom_registration(
     data: UserReg,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
-) -> str:
+) -> Union[str, Exception]:
 
     try:
         user = UserCreate(
@@ -47,7 +60,7 @@ async def custom_registration(
 async def get_user_by_id(
     value_id: int,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
-) -> UserInfo:
+) -> Union[UserInfo, Exception]:
     try:
         user = await user_manager.get(value_id)
     except UserNotExists:
@@ -57,14 +70,14 @@ async def get_user_by_id(
         )
     return user
 
-@router_user.get("/me", response_model=MyInfo)
+@router_user.get("/about_me", response_model=MyInfo)
 async def get_my_info(
     user = Depends(fastapi_users.current_user()),
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> MyInfo:
     return await user_manager.get(user.id)
 
-@router_user.post("/me/verified")
+@router_option.post("/verified")
 async def verify_request(
     user = Depends(fastapi_users.current_user()),
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
@@ -72,10 +85,186 @@ async def verify_request(
     await user_manager.request_verify(user)
     return f"Email message for verifying was sent"
 
-@router_user.get("/verify/{token}")
+@router_option.post("/verify/{token}")
 async def verify_user(
     token: str,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> str:
-    verified_user = await user_manager.verify(token)
-    return f"Account was verified"
+    await user_manager.verify(token)
+    return f"Account was verified. U can close the tab"
+
+@router_option.post("/forgot")
+async def forgot_pass(
+    user = Depends(fastapi_users.current_user()),
+    user_manager: UserManager = Depends(fastapi_users.get_user_manager)
+) -> str:
+    await user_manager.forgot_password(user)
+    return f"Message with instruction was sent"
+
+@router_option.post("/reset/{token}")
+async def reset_pass(
+    token: str,
+    passwd: str,
+    user_manager: UserManager = Depends(fastapi_users.get_user_manager)
+) -> str:
+    await user_manager.reset_password(token, passwd)
+    return f"Password was recovery"
+
+@router_admin.patch("/deactivate", response_model=None)
+async def deactivate_user(
+    id: int,
+    user = Depends(fastapi_users.current_user()),
+    session: AsyncSession = Depends(get_async_session)
+) -> Union[str, Exception]:
+    
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=470,
+            detail=f"User is not admin"
+        )
+    
+    check_user = \
+        select(
+            User
+        ).filter(
+            User.id == id
+        )
+    target_user = await session.execute(check_user)
+    res = target_user.scalars().first()
+    
+    if not res:
+        raise HTTPException(
+            status_code=471,
+            detail=f"User is not found"
+        )
+    
+    if not res.is_active:
+        raise HTTPException(
+            status_code=472,
+            detail=f"User is already deactivate"
+        )
+    
+    try:    
+        stmt = \
+            update(
+                User
+            ).filter(
+                User.id == id
+            ).values(
+                is_active=False
+            )
+        
+        await session.execute(stmt)
+        await session.commit()
+        return f"User {res.email} was deactivate"
+    except Exception as e:
+        raise HTTPException(
+            status_code=499,
+            detail=str(e)
+        )
+
+@router_admin.patch("/activate", response_model=None)
+async def activate_user(
+    id: int,
+    user = Depends(fastapi_users.current_user()),
+    session: AsyncSession = Depends(get_async_session)
+) -> Union[str, Exception]:
+    
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=470,
+            detail=f"User is not admin"
+        )
+    
+    check_user = \
+        select(
+            User
+        ).filter(
+            User.id == id
+        )
+    target_user = await session.execute(check_user)
+    res = target_user.scalars().first()
+    
+    if not res:
+        raise HTTPException(
+            status_code=471,
+            detail=f"User is not found"
+        )
+    
+    if res.is_active:
+        raise HTTPException(
+            status_code=472,
+            detail=f"User is already activate"
+        )
+    
+    try:    
+        stmt = \
+            update(
+                User
+            ).filter(
+                User.id == id
+            ).values(
+                is_active=True
+            )
+        
+        await session.execute(stmt)
+        await session.commit()
+        return f"User {res.email} was deactivate"
+    except Exception as e:
+        raise HTTPException(
+            status_code=499,
+            detail=str(e)
+        )
+    
+@router_admin.delete("/delete", response_model=None)
+async def delete_user(
+    id: int,
+    user = Depends(fastapi_users.current_user()),
+    session: AsyncSession = Depends(get_async_session)
+) -> Union[str, Exception]:
+    
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=470,
+            detail=f"User is not admin"
+        )
+    
+    if user.id == id:
+        raise HTTPException(
+            status_code=470,
+            detail=f"U dont delete yourself"
+        )
+
+    check_user = \
+        select(
+            User
+        ).filter(
+            User.id == id
+        )
+    target_user = await session.execute(check_user)
+    res = target_user.scalars().first()
+    
+    if not res:
+        raise HTTPException(
+            status_code=471,
+            detail=f"User is not found"
+        )
+    
+    
+    try:    
+        stmt = \
+            delete(
+                User
+            ).filter(
+                User.id == id
+            )
+        
+        await session.execute(stmt)
+        await session.commit()
+        after_delete(res.email, res.username)
+        return f"User {res.email} was deleted"
+    except Exception as e:
+        raise HTTPException(
+            status_code=499,
+            detail=str(e)
+        )
