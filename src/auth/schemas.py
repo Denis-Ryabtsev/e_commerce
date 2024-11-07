@@ -61,7 +61,7 @@ class UserReg(BaseModel):
     user_role: RoleType
 
     @field_validator("user_password")
-    def validate_passwd(cls, value: str) -> Union[None, Exception]:
+    def validate_passwd(cls, value: str) -> Union[str, Exception]:
         if len(value) < 5 or len(value) > 10:
             raise ValueError(f"Password must contain from 5 to 10 symbols")
         if not re.search(r"[A-Z]", value):
