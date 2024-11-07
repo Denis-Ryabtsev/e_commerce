@@ -1,10 +1,9 @@
 import enum
 from datetime import datetime
 
-from fastapi_users.db import SQLAlchemyBaseUserTable, \
-                                SQLAlchemyUserDatabase
+from fastapi_users.db import SQLAlchemyBaseUserTable
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Boolean, ForeignKey, String, TIMESTAMP, Enum, JSON
+from sqlalchemy import Boolean, String, TIMESTAMP, Enum
 
 from database import Base
 
