@@ -11,7 +11,9 @@ class Setting(BaseSettings):
     DB_NAME: str
     DB_PASS: str
     DB_USER: str
+
     SECRET_AUTH: str
+    
     SMTP_USER: str
     SMTP_PASS: str
 
