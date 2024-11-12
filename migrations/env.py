@@ -7,6 +7,7 @@ from alembic import context
 
 from src.database import Base
 from src.auth.models import User
+from src.management.models import Good, Order, Category, OrderDetail
 from src.config import setting
 
 
