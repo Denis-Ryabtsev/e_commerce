@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from fastapi_users.db import SQLAlchemyBaseUserTable
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Boolean, String, TIMESTAMP, Enum
 
 from database import Base
@@ -43,3 +43,23 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     is_verified: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+
+    # good
+    goods = relationship(
+        'Good', 
+        back_populates='users'
+    )
+    # orders
+    ord_sel = relationship(
+        'Order', 
+        foreign_keys='[Order.seller_id]', 
+        back_populates='seller'
+    )
+    ord_cus = relationship(
+        'Order',
+        foreign_keys='[Order.customer_id]',
+        back_populates='customer'
+    )
+
+    def __init__(self):
+        from management.models import Good, Order
