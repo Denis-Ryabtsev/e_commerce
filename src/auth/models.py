@@ -10,7 +10,7 @@ from database import Base
 
 class RoleType(enum.Enum):
     customer = "customer"
-    serller = "seller"
+    seller = "seller"
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
@@ -60,6 +60,3 @@ class User(SQLAlchemyBaseUserTable[int], Base):
         foreign_keys='[Order.customer_id]',
         back_populates='customer'
     )
-
-    def __init__(self):
-        from management.models import Good, Order
