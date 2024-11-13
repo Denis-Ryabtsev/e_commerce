@@ -1,8 +1,17 @@
 from datetime import datetime
+import enum
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey
+from sqlalchemy import TIMESTAMP, ForeignKey, Enum
 
 from database import Base
+
+
+class CategoryType(enum.Enum):
+    beverages = 'beverages'
+    confections = 'Confections'
+    cars = 'cars'
+    games = 'games'
 
 
 class Good(Base):
@@ -49,7 +58,9 @@ class Order(Base):
     customer_id: Mapped[int] = mapped_column(
         ForeignKey("user.id")
     )
-    date_order: Mapped[datetime]
+    date_order: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.now()
+    )
     ship_country: Mapped[str] = mapped_column(
         nullable=False
     )
@@ -77,8 +88,8 @@ class Category(Base):
     id: Mapped[int] = mapped_column(
         primary_key=True, autoincrement=True
     )
-    category_name: Mapped[str] = mapped_column(
-        nullable=False
+    category_name: Mapped[CategoryType] = mapped_column(
+        Enum(CategoryType), nullable=False
     )
     description: Mapped[str]
 
