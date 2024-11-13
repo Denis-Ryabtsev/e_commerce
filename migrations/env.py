@@ -5,6 +5,9 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# import os, sys
+# sys.path.append(os.path.join(sys.path[0], 'src'))
+
 from src.database import Base
 from src.auth.models import User
 from src.management.models import Good, Order, Category, OrderDetail
