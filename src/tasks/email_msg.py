@@ -111,3 +111,52 @@ def after_delete(user_email: str, user_name: str) -> None:
         )
     }
     send_email.delay(email)
+
+def seller_order(goods: list[tuple]) -> None:
+    
+    data_send = {}
+    for email, good, count in goods:
+        if email not in data_send:
+            data_send[email] = []
+        data_send[email].append((good, count))
+
+    for email, item in data_send.items():
+        obj = ", ".join([f"{temp} (count: {count})" for temp, count in item])
+
+        body = {
+        'Subject': 'Good was include in order',
+        'From': setting.SMTP_USER,
+        'To': email,
+        'Content': (
+            '<div>'
+            f'<h1 style="color: red;">Здравствуйте, '
+            f'Your goods: {obj} was include in order in '\
+            f'{datetime.now().strftime("%H:%M:%S")}😊</h1>'
+            '</div>'
+        )
+        }
+        send_email.delay(body)
+
+def customer_order(goods: list[tuple], email) -> None:
+    
+    data_send = {}
+    for _, good, count in goods:
+        if good not in data_send:
+            data_send[good] = []
+        data_send[good].append(count)
+    obj = ", ".join(f"{item} (count: {sum(numb)})" for item, numb in data_send.items())
+
+    body = {
+    'Subject': 'Order successful',
+    'From': setting.SMTP_USER,
+    'To': email,
+    'Content': (
+        '<div>'
+        f'<h1 style="color: red;">Здравствуйте, '
+        f'Your goods: {obj} was include in order in '\
+        f'{datetime.now().strftime("%H:%M:%S")}😊</h1>'
+        '</div>'
+    )
+    }
+    
+    send_email.delay(body)
