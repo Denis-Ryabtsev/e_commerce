@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_users.exceptions import UserAlreadyExists, UserNotExists
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +32,7 @@ router_admin = APIRouter(
 )
 
 
-@router_reg.post("/register", response_model=None)
+@router_reg.post("/register", response_model=Optional[str])
 async def custom_registration(
     data: UserReg,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
@@ -56,11 +56,12 @@ async def custom_registration(
             detail=f"Email address already registered {user.email}"
         )
 
-@router_user.get("/users/{user_id}", response_model=UserInfo)
+@router_user.get("/users/{user_id}", response_model=Optional[UserInfo])
 async def get_user_by_id(
     value_id: int,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> Union[UserInfo, Exception]:
+    
     try:
         user = await user_manager.get(value_id)
     except UserNotExists:
@@ -68,6 +69,7 @@ async def get_user_by_id(
             status_code=404, 
             detail="User not found"
         )
+    
     return user
 
 @router_user.get("/about_me", response_model=MyInfo)
@@ -75,6 +77,7 @@ async def get_my_info(
     user = Depends(fastapi_users.current_user()),
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> MyInfo:
+    
     return await user_manager.get(user.id)
 
 @router_option.post("/verified")
@@ -82,6 +85,7 @@ async def verify_request(
     user = Depends(fastapi_users.current_user()),
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> str:
+    
     await user_manager.request_verify(user)
     return f"Email message for verifying was sent"
 
@@ -90,6 +94,7 @@ async def verify_user(
     token: str,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> str:
+    
     await user_manager.verify(token)
     return f"Account was verified. U can close the tab"
 
@@ -98,6 +103,7 @@ async def forgot_pass(
     user = Depends(fastapi_users.current_user()),
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> str:
+    
     await user_manager.forgot_password(user)
     return f"Message with instruction was sent"
 
@@ -107,10 +113,11 @@ async def reset_pass(
     passwd: str,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> str:
+    
     await user_manager.reset_password(token, passwd)
     return f"Password was recovery"
 
-@router_admin.patch("/deactivate", response_model=None)
+@router_admin.patch("/deactivate", response_model=Optional[str])
 async def deactivate_user(
     id: int,
     user = Depends(fastapi_users.current_user()),
@@ -163,7 +170,7 @@ async def deactivate_user(
             detail=str(e)
         )
 
-@router_admin.patch("/activate", response_model=None)
+@router_admin.patch("/activate", response_model=Optional[str])
 async def activate_user(
     id: int,
     user = Depends(fastapi_users.current_user()),
@@ -216,7 +223,7 @@ async def activate_user(
             detail=str(e)
         )
     
-@router_admin.delete("/delete", response_model=None)
+@router_admin.delete("/delete", response_model=Optional[str])
 async def delete_user(
     id: int,
     user = Depends(fastapi_users.current_user()),
@@ -249,7 +256,6 @@ async def delete_user(
             status_code=471,
             detail=f"User is not found"
         )
-    
     
     try:    
         stmt = \
