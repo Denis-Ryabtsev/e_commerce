@@ -9,7 +9,7 @@ from database import Base
 
 class CategoryType(enum.Enum):
     beverages = 'beverages'
-    confections = 'Confections'
+    confections = 'confections'
     cars = 'cars'
     games = 'games'
 
@@ -52,11 +52,9 @@ class Order(Base):
     id: Mapped[int] = mapped_column(
         primary_key=True, autoincrement=True
     )
-    seller_id: Mapped[int] = mapped_column(
-        ForeignKey("user.id")
-    )
+
     customer_id: Mapped[int] = mapped_column(
-        ForeignKey("user.id")
+        ForeignKey("user.id", ondelete='CASCADE')
     )
     date_order: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), default=datetime.now()
@@ -65,11 +63,6 @@ class Order(Base):
         nullable=False
     )
 
-    seller = relationship(
-        'User', 
-        foreign_keys=[seller_id], 
-        back_populates='ord_sel'
-    )
     customer = relationship(
         'User', 
         foreign_keys=[customer_id], 
@@ -78,7 +71,8 @@ class Order(Base):
 
     od = relationship(
         'OrderDetail',
-        back_populates='orders'
+        back_populates='orders',
+        cascade="all, delete"
     )
 
 
@@ -103,10 +97,10 @@ class OrderDetail(Base):
     __tablename__ = 'order_detail'
 
     order_id: Mapped[int] = mapped_column(
-        ForeignKey('order.id'), primary_key=True
+        ForeignKey('order.id', ondelete='CASCADE'), primary_key=True
     )
     good_id: Mapped[int] = mapped_column(
-        ForeignKey('good.id'), primary_key=True
+        ForeignKey('good.id', ondelete='CASCADE'), primary_key=True
     )
     quantity: Mapped[int] = mapped_column(
         nullable=False
