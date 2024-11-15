@@ -11,9 +11,6 @@ from auth.models import User, RoleType
 from database import get_async_session
 
 
-# декоратор для проверки роли пользователя и верификации при выставлении товара
-# проверка: является ли пользователь с указанным ИД продажником или нет
-
 router_good = APIRouter(
     prefix='/goods',
     tags=['Goods operations']
