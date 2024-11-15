@@ -47,16 +47,14 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     # good
     goods = relationship(
         'Good', 
-        back_populates='users'
+        back_populates='users',
+        cascade="all, delete"
     )
+
     # orders
-    ord_sel = relationship(
-        'Order', 
-        foreign_keys='[Order.seller_id]', 
-        back_populates='seller'
-    )
     ord_cus = relationship(
         'Order',
         foreign_keys='[Order.customer_id]',
-        back_populates='customer'
+        back_populates='customer',
+        cascade="all, delete"
     )
