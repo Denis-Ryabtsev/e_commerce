@@ -58,12 +58,12 @@ async def custom_registration(
 
 @router_user.get("/users/{user_id}", response_model=Optional[UserInfo])
 async def get_user_by_id(
-    value_id: int,
+    user_id: int,
     user_manager: UserManager = Depends(fastapi_users.get_user_manager)
 ) -> Union[UserInfo, Exception]:
     
     try:
-        user = await user_manager.get(value_id)
+        user = await user_manager.get(user_id)
     except UserNotExists:
         raise HTTPException(
             status_code=404, 
