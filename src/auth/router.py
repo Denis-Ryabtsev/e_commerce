@@ -123,7 +123,7 @@ async def deactivate_user(
     user = Depends(fastapi_users.current_user()),
     session: AsyncSession = Depends(get_async_session)
 ) -> Union[str, Exception]:
-    
+
     if not user.is_superuser:
         raise HTTPException(
             status_code=470,
@@ -163,7 +163,7 @@ async def deactivate_user(
         
         await session.execute(stmt)
         await session.commit()
-        return f"User {res.email} was deactivate"
+        return f"User with id = {id} was deactivate"
     except Exception as e:
         raise HTTPException(
             status_code=499,
@@ -216,13 +216,45 @@ async def activate_user(
         
         await session.execute(stmt)
         await session.commit()
-        return f"User {res.email} was deactivate"
+        return f"User with id = {id} was activate"
     except Exception as e:
         raise HTTPException(
             status_code=499,
             detail=str(e)
         )
+
+@router_admin.patch("/admin", response_model=Optional[str])
+async def admin_user(
+    user = Depends(fastapi_users.current_user()),
+    session: AsyncSession = Depends(get_async_session)
+) -> Union[str, Exception]:
     
+    user_id = user.id
+    if user.is_superuser:
+        raise HTTPException(
+            status_code=470,
+            detail=f"User is already admin"
+        )
+    
+    try:    
+        stmt = \
+            update(
+                User
+            ).filter(
+                User.id == user_id
+            ).values(
+                is_superuser=True
+            )
+        
+        await session.execute(stmt)
+        await session.commit()
+        return f"User with id = {user_id} is admin"
+    except Exception as e:
+        raise HTTPException(
+            status_code=499,
+            detail=str(e)
+        )
+
 @router_admin.delete("/delete", response_model=Optional[str])
 async def delete_user(
     id: int,
@@ -238,7 +270,7 @@ async def delete_user(
     
     if user.id == id:
         raise HTTPException(
-            status_code=470,
+            status_code=472,
             detail=f"U dont delete yourself"
         )
 
@@ -268,7 +300,7 @@ async def delete_user(
         await session.execute(stmt)
         await session.commit()
         after_delete(res.email, res.username)
-        return f"User {res.email} was deleted"
+        return f"User with id = {id} was deleted"
     except Exception as e:
         raise HTTPException(
             status_code=499,

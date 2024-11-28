@@ -52,6 +52,7 @@ class MyInfo(BaseModel):
     registry_at: datetime
     is_active: bool
     is_verified: bool
+    is_superuser: bool
 
 
 class UserReg(BaseModel):
