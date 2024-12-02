@@ -36,6 +36,7 @@ password = PasswordHelper()
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_db():
+    assert setting.MODE == 'TEST'
     async with engine_db.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield 
