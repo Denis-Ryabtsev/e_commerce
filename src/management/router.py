@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, insert, select, func, update
 
 from tasks.email_msg import customer_order, seller_order
-from management.schemas import AddGood, GoodSeller, MyOrder
+from management.schemas import AddGood, AddOrder, GoodSeller, MyOrder
 from management.models import Good, Category, CategoryType, Order, OrderDetail
 from auth.base_config import fastapi_users
 from auth.models import User, RoleType
@@ -30,12 +30,12 @@ async def add_good(
     
     if user.role != RoleType.seller:
         raise HTTPException(
-            status_code=400,
+            status_code=491,
             detail=f"Operations with goods only for sellers!"
         )
     elif not user.is_verified:
         raise HTTPException(
-            status_code=400,
+            status_code=492,
             detail=f"Seller is not verified!"
         )
     user_id = user.id
@@ -103,11 +103,11 @@ async def get_goods(
     
     return result if result else f"Nothing"
 
-@router_good.get('/seller/{id}', response_model=Union[list[AddGood], str])
+@router_good.get('/seller/{id}', response_model=Union[list[GoodSeller], str])
 async def goods_seller(
     id: int,
     session: AsyncSession = Depends(get_async_session)
-) -> Union[list[AddGood], str]:
+) -> Union[list[GoodSeller], str]:
     
     query = \
         select(
@@ -296,13 +296,18 @@ async def delete_good(
 
 @router_order.post('/add', response_model=Optional[str])
 async def add_orders(
-    product_list: list[int],
-    count_list: list[int],
-    country: str,
+    # product_list: list[int],
+    # count_list: list[int],
+    # country: str,
+    data: AddOrder,
     session: AsyncSession = Depends(get_async_session),
     user = Depends(fastapi_users.current_user())
 ) -> Union[str, HTTPException]:
     
+    product_list = data.product_list
+    count_list = data.count_list
+    country = data.country
+
     if not user.is_verified:
         raise HTTPException(
             status_code=400,

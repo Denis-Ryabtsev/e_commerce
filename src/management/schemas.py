@@ -19,3 +19,9 @@ class GoodSeller(BaseModel):
 class MyOrder(BaseModel):
     id: int
     description: str
+
+
+class AddOrder(BaseModel):
+    product_list: list[int]
+    count_list: list[int]
+    country: str

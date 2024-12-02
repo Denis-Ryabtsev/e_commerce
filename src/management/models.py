@@ -7,7 +7,7 @@ from sqlalchemy import TIMESTAMP, ForeignKey, Enum
 from database import Base
 
 
-class CategoryType(enum.Enum):
+class CategoryType(str, enum.Enum):
     beverages = 'beverages'
     confections = 'confections'
     cars = 'cars'
