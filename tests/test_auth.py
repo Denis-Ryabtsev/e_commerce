@@ -171,8 +171,7 @@ class TestAuth:
 
                 cookies = {"e_commerce": cookie_app}
                 response = await client.post('/logout', cookies=cookies)
-                assert response.status_code == 204
-                assert "e_commerce" not in response.cookies
+                assert response.status_code == 204 and "e_commerce" not in response.cookies
 
             elif response.status_code == 400:
                 assert response.json()['detail'] == exception
@@ -213,8 +212,7 @@ class TestAuth:
             assert response.json()['detail'] == exception
         else:
             user_data = response.json()
-            assert 'username' in user_data
-            assert 'role' in user_data
+            assert 'username' in user_data and 'role' in user_data
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -258,8 +256,7 @@ class TestAuth:
                 cookies = {"e_commerce": cookie_app}
                 response = await client.get(f'/about_me', cookies=cookies)
                 
-                assert response.status_code == 200
-                assert 'email' in response.json()
+                assert response.status_code == 200 and 'email' in response.json()
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -331,7 +328,8 @@ class TestAuth:
             )
         ]
     )
-    async def test_deactivate_user(self, payload, status, exception, status_not, exp_not, status_already, exp_already):
+    async def test_deactivate_user(self, payload, status, exception, 
+                                   status_not, exp_not, status_already, exp_already):
 
         async with AsyncClient(
             transport=ASGITransport(app=app),
@@ -343,19 +341,20 @@ class TestAuth:
             cookie_app = response.cookies.get('e_commerce')
             cookies = {'e_commerce': cookie_app}
             assert response.status_code == 204
-        
-        
 
-            response = await client.patch('/control/deactivate?id=2', cookies=cookies)
+            response = await client.patch('/control/deactivate', params={'id': 2}, cookies=cookies)
             
             assert response.status_code == status
             if response.status_code != 470:
-                response = await client.patch('/control/deactivate?id=2', cookies=cookies)
-                assert response.status_code == status_already
-                assert response.json()['detail'] == exp_already
-                response = await client.patch('/control/deactivate?id=999', cookies=cookies)
-                assert response.status_code == status_not
-                assert response.json()['detail'] == exp_not
+                response = await client.patch('/control/deactivate', 
+                                              params={'id': 2}, cookies=cookies)
+                assert response.status_code == status_already and \
+                    response.json()['detail'] == exp_already
+                
+                response = await client.patch('/control/deactivate', 
+                                              params={'id': 999}, cookies=cookies)
+                assert response.status_code == status_not and \
+                    response.json()['detail'] == exp_not
             else:
                 assert response.json()['detail'] == exception
 
@@ -389,7 +388,8 @@ class TestAuth:
             )
         ]
     )
-    async def test_activate_user(self, payload, status, exception, status_not, exp_not, status_already, exp_already):
+    async def test_activate_user(self, payload, status, exception, 
+                                 status_not, exp_not, status_already, exp_already):
 
         async with AsyncClient(
             transport=ASGITransport(app=app),
@@ -402,16 +402,20 @@ class TestAuth:
             cookies = {'e_commerce': cookie_app}
             assert response.status_code == 204
         
-            response = await client.patch('/control/activate?id=2', cookies=cookies)
+            response = await client.patch('/control/activate', params={'id': 2}, cookies=cookies)
             
             assert response.status_code == status
             if response.status_code != 470:
-                response = await client.patch('/control/activate?id=2', cookies=cookies)
-                assert response.status_code == status_already
-                assert response.json()['detail'] == exp_already
-                response = await client.patch('/control/activate?id=999', cookies=cookies)
-                assert response.status_code == status_not
-                assert response.json()['detail'] == exp_not
+                response = await client.patch('/control/activate', 
+                                              params={'id': 2}, cookies=cookies)
+                assert response.status_code == status_already and \
+                    response.json()['detail'] == exp_already
+                
+                response = await client.patch('/control/activate', 
+                                              params={'id': 999}, cookies=cookies)
+                assert response.status_code == status_not and \
+                    response.json()['detail'] == exp_not
+
             else:
                 assert response.json()['detail'] == exception
 
@@ -445,7 +449,8 @@ class TestAuth:
             )
         ]
     )
-    async def test_delete_user(self, payload, status, exception, status_not, exp_not, status_yourself, exp_yourself):
+    async def test_delete_user(self, payload, status, exception, 
+                               status_not, exp_not, status_yourself, exp_yourself):
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test"
@@ -457,19 +462,20 @@ class TestAuth:
             cookies = {'e_commerce': cookie_app}
             assert response.status_code == 204
         
-            response = await client.delete('/control/delete?id=1', cookies=cookies)
+            response = await client.delete(f'/control/delete', params={'id': 1}, cookies=cookies)
             
             assert response.status_code == status
             if response.status_code != 470:
-                response = await client.delete('/control/delete?id=1', cookies=cookies)
-                assert response.status_code == status_not
-                assert response.json()['detail'] == exp_not
-                response = await client.delete('/control/delete?id=3', cookies=cookies)
-                assert response.status_code == status_yourself
-                assert response.json()['detail'] == exp_yourself
+                response = await client.delete('/control/delete', 
+                                               params={'id': 1}, cookies=cookies)
+                assert response.status_code == status_not and \
+                    response.json()['detail'] == exp_not
+                response = await client.delete('/control/delete', 
+                                               params={'id': 3}, cookies=cookies)
+                assert response.status_code == status_yourself and \
+                    response.json()['detail'] == exp_yourself
             else:
                 assert response.json()['detail'] == exception
-
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -519,6 +525,3 @@ class TestAuth:
                 assert response.json()['detail'] == f"User already verified"
             else:
                 assert response.json()['detail'] == exception
-
-
-#   1- удаляется, 2- не админ, не верифиц, 3- админ, верифиц
