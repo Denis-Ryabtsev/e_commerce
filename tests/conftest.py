@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from fastapi_users.jwt import generate_jwt
 from fastapi_users.db import SQLAlchemyUserDatabase
 from fastapi_users.password import PasswordHelper
+from unittest.mock import patch
 
 from database import get_async_session, Base
 from config import setting
@@ -132,3 +133,13 @@ async def test_user():
         
         session.add_all(user + categories)
         await session.commit()
+
+@pytest.fixture()
+def fake_send():
+    with patch('tasks.email_msg.send_email.delay') as mocked_send_email:
+        yield mocked_send_email
+
+@pytest.fixture()
+def fake_smtp():
+    with patch('tasks.email_msg.smtplib.SMTP_SSL') as mocked_smtp:
+        yield mocked_smtp
