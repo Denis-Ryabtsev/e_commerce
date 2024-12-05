@@ -25,7 +25,7 @@ def send_email(email_content: str) -> None:
 
 def after_reg(user_email: str, user_name: str) -> None:
     email = {
-        'Subject': 'Registration successful',
+        'Subject': 'Registration successfull',
         'From': setting.SMTP_USER,
         'To': user_email,
         'Content': (
