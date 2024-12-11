@@ -10,7 +10,7 @@ from config import setting
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=465
 
-celery = Celery('tasks', broker='redis://localhost:6379')
+celery = Celery('tasks', broker=f'redis://{setting.REDIS_HOST}:6379')
 
 @celery.task
 def send_email(email_content: str) -> None:
