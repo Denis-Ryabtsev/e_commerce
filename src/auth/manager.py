@@ -196,7 +196,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
         return updated_user
 
-    def on_after_register(
+    async def on_after_register(
         self, 
         user: User, 
         request: Optional[Request] = None
